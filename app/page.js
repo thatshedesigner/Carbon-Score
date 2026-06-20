@@ -1,16 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import IntakeForm from "@/components/IntakeForm";
+import { useCallback, useState } from "react";
+import QuickContext from "@/components/QuickContext";
+import ReceiptScanner from "@/components/ReceiptScanner";
 import ScoreDashboard from "@/components/ScoreDashboard";
+import StreakLeaderboard from "@/components/StreakLeaderboard";
+import { getData } from "@/app/lib/storage";
 
 export default function Home() {
   const [scoreState, setScoreState] = useState({
-    status: "idle",
+    status: "context",
     result: null,
   });
 
-  async function handleComplete(data) {
+  const handleContextComplete = useCallback(() => {
+    setScoreState({ status: "scanner", result: null });
+  }, []);
+
+  async function handleScoreRequest() {
+    const data = getData();
+
     setScoreState({ status: "loading", result: null });
 
     const response = await fetch("/api/score", {
@@ -18,20 +27,30 @@ export default function Home() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        quickContext: data.quickContext,
+        cumulativeKg: data.cumulativeKg,
+        totalScans: data.totalScans,
+      }),
     });
     const result = await response.json();
 
     setScoreState({ status: "done", result });
   }
 
-  function handleStartOver() {
-    setScoreState({ status: "idle", result: null });
+  function handleScanAnother() {
+    setScoreState({ status: "scanner", result: null });
   }
 
   return (
     <main className="min-h-screen bg-mist px-4 py-10">
-      {scoreState.status === "idle" && <IntakeForm onComplete={handleComplete} />}
+      {scoreState.status === "context" && (
+        <QuickContext onComplete={handleContextComplete} />
+      )}
+
+      {scoreState.status === "scanner" && (
+        <ReceiptScanner onDone={handleScoreRequest} />
+      )}
 
       {scoreState.status === "loading" && (
         <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center text-forest">
@@ -47,12 +66,13 @@ export default function Home() {
             breakdown={scoreState.result.breakdown}
             levers={scoreState.result.levers}
           />
+          <StreakLeaderboard score={scoreState.result.score} />
           <button
             type="button"
-            onClick={handleStartOver}
-            className="w-full rounded-xl border border-forest/25 bg-white px-4 py-3 font-semibold text-forest transition hover:bg-forest hover:text-white"
+            onClick={handleScanAnother}
+            className="w-full rounded-xl bg-forest px-4 py-3 font-semibold text-white transition hover:bg-forest/90"
           >
-            Start Over
+            Scan Another Receipt
           </button>
         </div>
       )}

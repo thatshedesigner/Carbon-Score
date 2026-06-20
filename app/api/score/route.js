@@ -1,32 +1,5 @@
 import { NextResponse } from "next/server";
-
-const COMMUTE_FACTORS = {
-  car_solo: 0.21,
-  carpool: 0.105,
-  transit: 0.04,
-  bike_walk: 0,
-  wfh: 0,
-};
-
-const DIET_ANNUAL_KG = {
-  meat_daily: 3300,
-  meat_weekly: 2500,
-  vegetarian: 1700,
-  vegan: 1500,
-};
-
-const HOME_ENERGY_ANNUAL_KG = {
-  grid_standard: 2500,
-  grid_renewable: 300,
-  solar: 100,
-};
-
-const PURCHASE_KG = {
-  electronics: 300,
-  furniture: 200,
-  clothing: 100,
-  none: 0,
-};
+import { COMMUTE_FACTORS, HOME_ENERGY_ANNUAL } from "@/app/lib/emissionFactors";
 
 const SYSTEM_INSTRUCTION =
   'You are a carbon footprint advisor. Given a user\'s annual emissions breakdown by category and their score (300-850, higher is better), return ONLY valid JSON, no markdown, no preamble, in this exact shape:\n{"levers": [{"category": string, "action": string, "explanation": string, "potentialPointGain": number}]}\nReturn exactly 3 levers, ranked by potentialPointGain descending, highest-impact category first. Each explanation must be one sentence, concrete, and reference the actual kg number for that category. potentialPointGain is your estimate of how many score points that single change could add, integer between 5 and 80.';
@@ -95,32 +68,27 @@ async function getLeversFromGemini(score, breakdown) {
 }
 
 export async function POST(request) {
-  const {
-    commuteMode,
-    commuteKmPerDay,
-    diet,
-    flightsPerYear,
-    homeEnergy,
-    recentPurchase,
-  } = await request.json();
-
-  const commuteFactor = COMMUTE_FACTORS[commuteMode] ?? 0;
-  const commuteKg = Number(commuteKmPerDay) * commuteFactor * 230;
-  const dietKg = DIET_ANNUAL_KG[diet] ?? 0;
-  const flightsKg = Number(flightsPerYear) * 500;
-  const homeEnergyKg = HOME_ENERGY_ANNUAL_KG[homeEnergy] ?? 0;
-  const purchaseKg = PURCHASE_KG[recentPurchase] ?? 0;
-
+  const { quickContext, cumulativeKg, totalScans } = await request.json();
+  const commuteFactor = COMMUTE_FACTORS[quickContext?.commuteMode] ?? 0;
+  const commuteAnnualKg =
+    Number(quickContext?.commuteKmPerDay ?? 0) * commuteFactor * 230;
+  const homeEnergyAnnualKg =
+    HOME_ENERGY_ANNUAL[quickContext?.homeEnergy] ?? 0;
+  const scanCount = Math.max(1, Number(totalScans) || 1);
+  const scannedKg = Object.values(cumulativeKg ?? {}).reduce(
+    (sum, value) => sum + Number(value ?? 0),
+    0,
+  );
+  const purchaseAndDietKg = scannedKg * (365 / scanCount);
   const totalAnnualKg =
-    commuteKg + dietKg + flightsKg + homeEnergyKg + purchaseKg;
-  const totalAnnualTons = totalAnnualKg / 1000;
-  const score = Math.round(clampScore(850 - (totalAnnualTons / 12) * 550));
+    commuteAnnualKg + homeEnergyAnnualKg + purchaseAndDietKg;
+  const score = Math.round(
+    clampScore(850 - (totalAnnualKg / 1000 / 12) * 550),
+  );
   const breakdown = {
-    commuteKg,
-    dietKg,
-    flightsKg,
-    homeEnergyKg,
-    purchaseKg,
+    commuteAnnualKg,
+    homeEnergyAnnualKg,
+    purchaseAndDietKg,
   };
 
   try {

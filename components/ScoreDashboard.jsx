@@ -9,6 +9,9 @@ const SCORE_STYLES = [
 ];
 
 const BREAKDOWN_LABELS = {
+  commuteAnnualKg: "Commute",
+  homeEnergyAnnualKg: "Home energy",
+  purchaseAndDietKg: "Purchases and diet",
   commuteKg: "Commute",
   dietKg: "Diet",
   flightsKg: "Flights",
@@ -74,14 +77,21 @@ export default function ScoreDashboard({ score, breakdown, levers }) {
             score breakdown
           </h2>
           <dl className="mt-4 flex flex-col gap-3">
-            {Object.entries(BREAKDOWN_LABELS).map(([key, label]) => (
-              <div key={key} className="flex items-center justify-between gap-4">
-                <dt className="text-sm text-forest/70">{label}</dt>
-                <dd className="text-sm font-semibold text-forest">
-                  {formatKg(breakdown[key] ?? 0)}
-                </dd>
-              </div>
-            ))}
+            {Object.entries(breakdown).map(([key, value]) => {
+              const label = BREAKDOWN_LABELS[key] ?? key;
+
+              return (
+                <div
+                  key={key}
+                  className="flex items-center justify-between gap-4"
+                >
+                  <dt className="text-sm text-forest/70">{label}</dt>
+                  <dd className="text-sm font-semibold text-forest">
+                    {formatKg(value ?? 0)}
+                  </dd>
+                </div>
+              );
+            })}
           </dl>
         </article>
       )}
