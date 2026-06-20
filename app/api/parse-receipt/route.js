@@ -15,7 +15,7 @@ export async function POST(request) {
   try {
     const { imageBase64, mediaType } = await request.json();
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: {
@@ -43,10 +43,13 @@ export async function POST(request) {
     );
 
     if (!response.ok) {
-      return NextResponse.json({ items: [] });
+    const errorBody = await response.text();
+    console.error("Gemini API call failed:", response.status, errorBody);
+    return NextResponse.json({ items: [] });
     }
 
     const data = await response.json();
+    console.log("Gemini raw response:", JSON.stringify(data));
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!text) {
@@ -57,7 +60,8 @@ export async function POST(request) {
     const parsedItems = Array.isArray(parsed.items) ? parsed.items : [];
 
     return NextResponse.json({ items: parsedItems });
-  } catch {
+  } catch (error) {
+    console.error("Receipt parse failed:", error.message);
     return NextResponse.json({ items: [] });
   }
 }

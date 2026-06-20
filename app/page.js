@@ -5,6 +5,7 @@ import QuickContext from "@/components/QuickContext";
 import ReceiptScanner from "@/components/ReceiptScanner";
 import ScoreDashboard from "@/components/ScoreDashboard";
 import StreakLeaderboard from "@/components/StreakLeaderboard";
+import HowItWorks from "@/app/components/HowItWorks";
 import { getData } from "@/app/lib/storage";
 
 export default function Home() {
@@ -12,6 +13,7 @@ export default function Home() {
     status: "context",
     result: null,
   });
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
 
   const handleContextComplete = useCallback(() => {
     setScoreState({ status: "scanner", result: null });
@@ -44,6 +46,14 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-mist px-4 py-10">
+      <button
+        type="button"
+        onClick={() => setShowHowItWorks(true)}
+        className="fixed right-4 top-4 z-40 rounded-full bg-white px-4 py-2 text-sm font-semibold text-forest shadow"
+      >
+        How it works
+      </button>
+
       {scoreState.status === "context" && (
         <QuickContext onComplete={handleContextComplete} />
       )}
@@ -75,6 +85,10 @@ export default function Home() {
             Scan Another Receipt
           </button>
         </div>
+      )}
+
+      {showHowItWorks && (
+        <HowItWorks onClose={() => setShowHowItWorks(false)} />
       )}
     </main>
   );

@@ -48,19 +48,11 @@ export default function ReceiptScanner({ onDone }) {
   const [status, setStatus] = useState("idle");
   const [items, setItems] = useState([]);
 
-  async function handleFileChange(event) {
-    const file = event.target.files?.[0];
-
-    if (!file) {
-      return;
-    }
-
-    setPreviewUrl(URL.createObjectURL(file));
+  async function scanReceipt(imageBase64, mediaType) {
     setStatus("scanning");
     setItems([]);
 
     try {
-      const imageBase64 = await fileToBase64(file);
       const response = await fetch("/api/parse-receipt", {
         method: "POST",
         headers: {
@@ -68,7 +60,7 @@ export default function ReceiptScanner({ onDone }) {
         },
         body: JSON.stringify({
           imageBase64,
-          mediaType: file.type,
+          mediaType,
         }),
       });
       const data = await response.json();
@@ -82,6 +74,28 @@ export default function ReceiptScanner({ onDone }) {
     } finally {
       setStatus("done");
     }
+  }
+
+  async function handleFileChange(event) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    setPreviewUrl(URL.createObjectURL(file));
+    const imageBase64 = await fileToBase64(file);
+
+    scanReceipt(imageBase64, file.type);
+  }
+
+  async function handleDemoReceipt() {
+    const response = await fetch("/demo-receipt.png");
+    const blob = await response.blob();
+    const imageBase64 = await fileToBase64(blob);
+
+    setPreviewUrl(URL.createObjectURL(blob));
+    scanReceipt(imageBase64, "image/png");
   }
 
   function handleReset() {
@@ -105,13 +119,22 @@ export default function ReceiptScanner({ onDone }) {
       />
 
       {status === "idle" && (
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="flex min-h-56 flex-col items-center justify-center rounded-xl border-2 border-dashed border-forest/30 bg-white p-8 text-center font-semibold text-forest transition hover:border-forest hover:bg-mist"
-        >
-          Snap or upload a receipt
-        </button>
+        <div className="flex flex-col gap-3">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex min-h-56 flex-col items-center justify-center rounded-xl border-2 border-dashed border-forest/30 bg-white p-8 text-center font-semibold text-forest transition hover:border-forest hover:bg-mist"
+          >
+            Snap or upload a receipt
+          </button>
+          <button
+            type="button"
+            onClick={handleDemoReceipt}
+            className="self-center border-0 bg-transparent px-2 py-1 text-sm font-medium text-forest underline"
+          >
+            Try Demo Receipt
+          </button>
+        </div>
       )}
 
       {status !== "idle" && previewUrl && (
