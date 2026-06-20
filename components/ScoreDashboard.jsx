@@ -1,11 +1,11 @@
 "use client";
 
 const SCORE_STYLES = [
-  { max: 579, text: "text-score-poor", bg: "bg-score-poor" },
-  { max: 669, text: "text-score-fair", bg: "bg-score-fair" },
-  { max: 739, text: "text-score-good", bg: "bg-score-good" },
-  { max: 799, text: "text-score-great", bg: "bg-score-great" },
-  { max: 850, text: "text-score-excellent", bg: "bg-score-excellent" },
+  { max: 579, text: "text-score-poor", stroke: "#DC2626" },
+  { max: 669, text: "text-score-fair", stroke: "#F59E0B" },
+  { max: 739, text: "text-score-good", stroke: "#84CC16" },
+  { max: 799, text: "text-score-great", stroke: "#22C55E" },
+  { max: 850, text: "text-score-excellent", stroke: "#15803D" },
 ];
 
 const BREAKDOWN_LABELS = {
@@ -29,18 +29,48 @@ function formatKg(value) {
 
 export default function ScoreDashboard({ score, breakdown, levers }) {
   const scoreStyles = getScoreStyles(score);
-  const gaugeWidth = `${Math.min(100, Math.max(0, ((score - 300) / 550) * 100))}%`;
+  const scoreProgress = Math.min(100, Math.max(0, ((score - 300) / 550) * 100));
+  const ringRadius = 72;
+  const ringCircumference = 2 * Math.PI * ringRadius;
+  const ringOffset =
+    ringCircumference - (scoreProgress / 100) * ringCircumference;
   const hasLevers = Array.isArray(levers) && levers.length > 0;
 
   return (
     <section className="mx-auto flex w-full max-w-md flex-col gap-6">
-      <div className="text-center">
-        <div className={`text-6xl font-bold ${scoreStyles.text}`}>{score}</div>
-        <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-forest/10">
-          <div
-            className={`h-full rounded-full ${scoreStyles.bg}`}
-            style={{ width: gaugeWidth }}
-          />
+      <div className="flex justify-center">
+        <div className="relative h-48 w-48">
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 180 180"
+            className="h-full w-full -rotate-90"
+          >
+            <circle
+              cx="90"
+              cy="90"
+              r={ringRadius}
+              fill="none"
+              stroke="rgba(20, 83, 45, 0.1)"
+              strokeWidth="14"
+            />
+            <circle
+              cx="90"
+              cy="90"
+              r={ringRadius}
+              fill="none"
+              stroke={scoreStyles.stroke}
+              strokeWidth="14"
+              strokeLinecap="round"
+              strokeDasharray={ringCircumference}
+              strokeDashoffset={ringOffset}
+              className="transition-all duration-200 ease-out"
+            />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className={`text-6xl font-bold ${scoreStyles.text}`}>
+              {score}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -49,7 +79,7 @@ export default function ScoreDashboard({ score, breakdown, levers }) {
           {levers.slice(0, 3).map((lever) => (
             <article
               key={`${lever.category}-${lever.action}`}
-              className="rounded-xl border border-forest/15 bg-white p-4 shadow-sm"
+              className="rounded-xl bg-white p-4 shadow-soft"
             >
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div>
@@ -71,7 +101,7 @@ export default function ScoreDashboard({ score, breakdown, levers }) {
           ))}
         </div>
       ) : (
-        <article className="rounded-xl border border-forest/15 bg-white p-4 shadow-sm">
+        <article className="rounded-xl bg-white p-4 shadow-soft">
           <h2 className="font-semibold text-forest">
             Couldn&apos;t generate personalized levers right now, here&apos;s your
             score breakdown

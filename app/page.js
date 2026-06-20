@@ -5,6 +5,7 @@ import QuickContext from "@/components/QuickContext";
 import ReceiptScanner from "@/components/ReceiptScanner";
 import ScoreDashboard from "@/components/ScoreDashboard";
 import StreakLeaderboard from "@/components/StreakLeaderboard";
+import Header from "@/app/components/Header";
 import HowItWorks from "@/app/components/HowItWorks";
 import { getData } from "@/app/lib/storage";
 
@@ -45,47 +46,46 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-mist px-4 py-10">
-      <button
-        type="button"
-        onClick={() => setShowHowItWorks(true)}
-        className="fixed right-4 top-4 z-40 rounded-full bg-white px-4 py-2 text-sm font-semibold text-forest shadow"
+    <main className="min-h-screen bg-mist px-4 py-8">
+      <Header onHowItWorks={() => setShowHowItWorks(true)} />
+
+      <div
+        key={scoreState.status}
+        className="animate-screen-fade transition duration-200 ease-out"
       >
-        How it works
-      </button>
+        {scoreState.status === "context" && (
+          <QuickContext onComplete={handleContextComplete} />
+        )}
 
-      {scoreState.status === "context" && (
-        <QuickContext onComplete={handleContextComplete} />
-      )}
+        {scoreState.status === "scanner" && (
+          <ReceiptScanner onDone={handleScoreRequest} />
+        )}
 
-      {scoreState.status === "scanner" && (
-        <ReceiptScanner onDone={handleScoreRequest} />
-      )}
+        {scoreState.status === "loading" && (
+          <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center text-forest">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-forest/20 border-t-forest" />
+            <p className="font-medium">Calculating your score...</p>
+          </div>
+        )}
 
-      {scoreState.status === "loading" && (
-        <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center text-forest">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-forest/20 border-t-forest" />
-          <p className="font-medium">Calculating your score...</p>
-        </div>
-      )}
-
-      {scoreState.status === "done" && scoreState.result && (
-        <div className="mx-auto flex w-full max-w-md flex-col gap-6">
-          <ScoreDashboard
-            score={scoreState.result.score}
-            breakdown={scoreState.result.breakdown}
-            levers={scoreState.result.levers}
-          />
-          <StreakLeaderboard score={scoreState.result.score} />
-          <button
-            type="button"
-            onClick={handleScanAnother}
-            className="w-full rounded-xl bg-forest px-4 py-3 font-semibold text-white transition hover:bg-forest/90"
-          >
-            Scan Another Receipt
-          </button>
-        </div>
-      )}
+        {scoreState.status === "done" && scoreState.result && (
+          <div className="mx-auto flex w-full max-w-md flex-col gap-6">
+            <ScoreDashboard
+              score={scoreState.result.score}
+              breakdown={scoreState.result.breakdown}
+              levers={scoreState.result.levers}
+            />
+            <StreakLeaderboard score={scoreState.result.score} />
+            <button
+              type="button"
+              onClick={handleScanAnother}
+              className="w-full rounded-xl border border-forest/20 bg-white px-4 py-3 font-semibold text-forest transition hover:bg-mist"
+            >
+              Scan Another Receipt
+            </button>
+          </div>
+        )}
+      </div>
 
       {showHowItWorks && (
         <HowItWorks onClose={() => setShowHowItWorks(false)} />

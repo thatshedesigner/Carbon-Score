@@ -17,6 +17,18 @@ module.exports = {
         forest: "#14532D",
         mist: "#F0FDF4",
       },
+      boxShadow: {
+        soft: "0 16px 40px -28px rgba(20, 83, 45, 0.45)",
+      },
+      keyframes: {
+        screenFade: {
+          "0%": { opacity: "0", transform: "translateY(8px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+      },
+      animation: {
+        "screen-fade": "screenFade 200ms ease-out",
+      },
     },
   },
   plugins: [],

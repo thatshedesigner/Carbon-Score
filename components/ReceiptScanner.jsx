@@ -45,6 +45,7 @@ function formatKg(category) {
 export default function ReceiptScanner({ onDone }) {
   const fileInputRef = useRef(null);
   const [previewUrl, setPreviewUrl] = useState("");
+  const [previewAlt, setPreviewAlt] = useState("Receipt preview");
   const [status, setStatus] = useState("idle");
   const [items, setItems] = useState([]);
 
@@ -84,6 +85,7 @@ export default function ReceiptScanner({ onDone }) {
     }
 
     setPreviewUrl(URL.createObjectURL(file));
+    setPreviewAlt("Uploaded receipt preview");
     const imageBase64 = await fileToBase64(file);
 
     scanReceipt(imageBase64, file.type);
@@ -95,11 +97,13 @@ export default function ReceiptScanner({ onDone }) {
     const imageBase64 = await fileToBase64(blob);
 
     setPreviewUrl(URL.createObjectURL(blob));
+    setPreviewAlt("Sample grocery receipt");
     scanReceipt(imageBase64, "image/png");
   }
 
   function handleReset() {
     setPreviewUrl("");
+    setPreviewAlt("Receipt preview");
     setStatus("idle");
     setItems([]);
 
@@ -123,14 +127,15 @@ export default function ReceiptScanner({ onDone }) {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex min-h-56 flex-col items-center justify-center rounded-xl border-2 border-dashed border-forest/30 bg-white p-8 text-center font-semibold text-forest transition hover:border-forest hover:bg-mist"
+            className="flex min-h-56 flex-col items-center justify-center rounded-xl bg-forest p-8 text-center font-semibold text-white shadow-sm transition hover:bg-[#0f3f22]"
           >
             Snap or upload a receipt
           </button>
           <button
             type="button"
+            aria-label="Use a sample receipt"
             onClick={handleDemoReceipt}
-            className="self-center border-0 bg-transparent px-2 py-1 text-sm font-medium text-forest underline"
+            className="self-center rounded-xl border border-forest/20 bg-white px-4 py-2 text-sm font-semibold text-forest transition hover:bg-mist"
           >
             Try Demo Receipt
           </button>
@@ -140,7 +145,7 @@ export default function ReceiptScanner({ onDone }) {
       {status !== "idle" && previewUrl && (
         <Image
           src={previewUrl}
-          alt="Receipt preview"
+          alt={previewAlt}
           width={112}
           height={112}
           unoptimized
@@ -149,14 +154,14 @@ export default function ReceiptScanner({ onDone }) {
       )}
 
       {status === "scanning" && (
-        <div className="flex items-center gap-3 rounded-xl border border-forest/15 bg-white p-4 text-forest">
+        <div className="flex items-center gap-3 rounded-xl bg-white p-4 text-forest shadow-soft">
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-forest/20 border-t-forest" />
           <span className="font-medium">Scanning...</span>
         </div>
       )}
 
       {status === "done" && items.length > 0 && (
-        <div className="flex flex-col gap-3 rounded-xl border border-forest/15 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-3 rounded-xl bg-white p-4 shadow-soft">
           {items.map((item, index) => {
             const category = item.category || "other";
 
@@ -183,7 +188,7 @@ export default function ReceiptScanner({ onDone }) {
       )}
 
       {status === "done" && items.length === 0 && (
-        <div className="rounded-xl border border-forest/15 bg-white p-4 text-center font-medium text-forest shadow-sm">
+        <div className="rounded-xl bg-white p-4 text-center font-medium text-forest shadow-soft">
           Couldn&apos;t read that receipt clearly, try another photo
         </div>
       )}
@@ -193,7 +198,7 @@ export default function ReceiptScanner({ onDone }) {
           <button
             type="button"
             onClick={handleReset}
-            className="w-full rounded-xl border border-forest/25 bg-white px-4 py-3 font-semibold text-forest transition hover:bg-mist"
+            className="w-full rounded-xl border border-forest/20 bg-white px-4 py-3 font-semibold text-forest transition hover:bg-mist"
           >
             Scan Another
           </button>
@@ -201,7 +206,7 @@ export default function ReceiptScanner({ onDone }) {
             <button
               type="button"
               onClick={onDone}
-              className="w-full rounded-xl bg-forest px-4 py-3 font-semibold text-white transition hover:bg-forest/90"
+              className="w-full rounded-xl bg-forest px-4 py-3 font-semibold text-white shadow-sm transition hover:bg-[#0f3f22]"
             >
               See My Score
             </button>

@@ -45,7 +45,7 @@ export default function StreakLeaderboard({ score }) {
 
   return (
     <section className="mx-auto flex w-full max-w-md flex-col gap-5">
-      <div className="rounded-xl border border-forest/15 bg-white p-5 text-center shadow-sm">
+      <div className="rounded-xl bg-white p-5 text-center shadow-soft">
         <div className="flex items-center justify-center gap-3">
           <FlameIcon />
           <span className="text-5xl font-bold text-forest">
@@ -58,7 +58,7 @@ export default function StreakLeaderboard({ score }) {
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-forest/15 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl bg-white shadow-soft">
         <table className="w-full border-collapse text-left">
           <thead className="bg-mist text-sm text-forest/70">
             <tr>

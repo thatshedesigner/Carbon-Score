@@ -1,6 +1,6 @@
 import { RECEIPT_CATEGORY_KG } from "./emissionFactors";
 
-const STORAGE_KEY = "carbonstreak_data";
+const STORAGE_KEY = "Carbon Score_data";
 
 const DEFAULT_CUMULATIVE_KG = {
   meat_dairy: 0,

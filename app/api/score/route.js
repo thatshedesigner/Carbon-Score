@@ -1,11 +1,32 @@
 import { NextResponse } from "next/server";
 import { COMMUTE_FACTORS, HOME_ENERGY_ANNUAL } from "@/app/lib/emissionFactors";
+import { calculateScore } from "@/app/lib/scoring";
 
 const SYSTEM_INSTRUCTION =
   'You are a carbon footprint advisor. Given a user\'s annual emissions breakdown by category and their score (300-850, higher is better), return ONLY valid JSON, no markdown, no preamble, in this exact shape:\n{"levers": [{"category": string, "action": string, "explanation": string, "potentialPointGain": number}]}\nReturn exactly 3 levers, ranked by potentialPointGain descending, highest-impact category first. Each explanation must be one sentence, concrete, and reference the actual kg number for that category. potentialPointGain is your estimate of how many score points that single change could add, integer between 5 and 80.';
 
-function clampScore(score) {
-  return Math.min(850, Math.max(300, score));
+function isAllowedValue(map, value) {
+  return Object.prototype.hasOwnProperty.call(map, value);
+}
+
+function isValidCommuteKm(value) {
+  return (
+    typeof value === "number" &&
+    Number.isFinite(value) &&
+    value >= 0 &&
+    value <= 500
+  );
+}
+
+function sanitizeCumulativeKg(cumulativeKg) {
+  return Object.fromEntries(
+    Object.entries(cumulativeKg ?? {}).map(([category, value]) => [
+      category,
+      typeof value === "number" && Number.isFinite(value) && value >= 0
+        ? value
+        : 0,
+    ]),
+  );
 }
 
 function stripJsonCodeFence(text) {
@@ -69,22 +90,28 @@ async function getLeversFromGemini(score, breakdown) {
 
 export async function POST(request) {
   const { quickContext, cumulativeKg, totalScans } = await request.json();
-  const commuteFactor = COMMUTE_FACTORS[quickContext?.commuteMode] ?? 0;
-  const commuteAnnualKg =
-    Number(quickContext?.commuteKmPerDay ?? 0) * commuteFactor * 230;
-  const homeEnergyAnnualKg =
-    HOME_ENERGY_ANNUAL[quickContext?.homeEnergy] ?? 0;
+
+  if (
+    !isAllowedValue(COMMUTE_FACTORS, quickContext?.commuteMode) ||
+    !isAllowedValue(HOME_ENERGY_ANNUAL, quickContext?.homeEnergy) ||
+    !isValidCommuteKm(quickContext?.commuteKmPerDay)
+  ) {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  }
+
+  const sanitizedCumulativeKg = sanitizeCumulativeKg(cumulativeKg);
+  const commuteFactor = COMMUTE_FACTORS[quickContext.commuteMode];
+  const commuteAnnualKg = quickContext.commuteKmPerDay * commuteFactor * 230;
+  const homeEnergyAnnualKg = HOME_ENERGY_ANNUAL[quickContext.homeEnergy];
   const scanCount = Math.max(1, Number(totalScans) || 1);
-  const scannedKg = Object.values(cumulativeKg ?? {}).reduce(
-    (sum, value) => sum + Number(value ?? 0),
+  const scannedKg = Object.values(sanitizedCumulativeKg).reduce(
+    (sum, value) => sum + value,
     0,
   );
   const purchaseAndDietKg = scannedKg * (365 / scanCount);
   const totalAnnualKg =
     commuteAnnualKg + homeEnergyAnnualKg + purchaseAndDietKg;
-  const score = Math.round(
-    clampScore(850 - (totalAnnualKg / 1000 / 12) * 550),
-  );
+  const score = calculateScore(totalAnnualKg);
   const breakdown = {
     commuteAnnualKg,
     homeEnergyAnnualKg,
